@@ -5,21 +5,24 @@ import ExampleViz from './ExampleViz';
 const App = () => {
 	const [wells, setWells] = useState([])
 
-	const loadWells = () => {
-		fetch("http://localhost:3000/wells").then(res => res.json()).then(
-			(wells) => {
-				setWells(wells);
-			}, 
-			(error) => {
-				console.log('loadWells: ', error);
-			}
-		);
-	}
+	const loadWells = async () => {
+		return fetch("http://localhost:3000/wells")
+			.then(res => res.json())
+			.then(well_data => {
+				setWells(well_data);
+			})
+			.catch(err => {
+				console.log('loadWells: ', err);
+			});
+	};
 
 	useEffect(() => {
 		loadWells();
-		console.log(wells);
 	}, []);
+
+	if (wells.length <= 0) {
+		return null;
+	}
 
 	return (
 		<div 
@@ -28,8 +31,8 @@ const App = () => {
 				height: "100vh",
 				position: "relative",
 				padding: "16px",
-				"box-sizing": "border-box",
-				"background-color": "#000"
+				boxSizing: "border-box",
+				backgroundColor: "#000"
 			}}
 		>
 			<ExampleViz wells={wells}/>
