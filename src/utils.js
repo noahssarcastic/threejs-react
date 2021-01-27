@@ -21,7 +21,6 @@ function supertriangle(vertices) {
 
   dx = xmax - xmin;
   dy = ymax - ymin;
-  ``;
   dmax = Math.max(dx, dy);
   xmid = xmin + dx * 0.5;
   ymid = ymin + dy * 0.5;
@@ -105,140 +104,141 @@ function dedup(edges) {
   }
 }
 
-export default Delaunay = {
-  triangulate: function (vertices, key) {
-    var n = vertices.length,
-      i,
-      j,
-      indices,
-      st,
-      open,
-      closed,
-      edges,
-      dx,
-      dy,
-      a,
-      b,
-      c;
+const triangulate = (vertices, key) => {
+  var n = vertices.length,
+    i,
+    j,
+    indices,
+    st,
+    open,
+    closed,
+    edges,
+    dx,
+    dy,
+    a,
+    b,
+    c;
 
-    /* Bail if there aren't enough vertices to form any triangles. */
-    if (n < 3) return [];
+  /* Bail if there aren't enough vertices to form any triangles. */
+  if (n < 3) return [];
 
-    /* Slice out the actual vertices from the passed objects. (Duplicate the
-     * array even if we don't, though, since we need to make a supertriangle
-     * later on!) */
-    vertices = vertices.slice(0);
+  /* Slice out the actual vertices from the passed objects. (Duplicate the
+   * array even if we don't, though, since we need to make a supertriangle
+   * later on!) */
+  vertices = vertices.slice(0);
 
-    if (key) for (i = n; i--; ) vertices[i] = vertices[i][key];
+  if (key) for (i = n; i--; ) vertices[i] = vertices[i][key];
 
-    /* Make an array of indices into the vertex array, sorted by the
-     * vertices' x-position. Force stable sorting by comparing indices if
-     * the x-positions are equal. */
-    indices = new Array(n);
+  /* Make an array of indices into the vertex array, sorted by the
+   * vertices' x-position. Force stable sorting by comparing indices if
+   * the x-positions are equal. */
+  indices = new Array(n);
 
-    for (i = n; i--; ) indices[i] = i;
+  for (i = n; i--; ) indices[i] = i;
 
-    indices.sort(function (i, j) {
-      var diff = vertices[j][0] - vertices[i][0];
-      return diff !== 0 ? diff : i - j;
-    });
+  indices.sort(function (i, j) {
+    var diff = vertices[j][0] - vertices[i][0];
+    return diff !== 0 ? diff : i - j;
+  });
 
-    /* Next, find the vertices of the supertriangle (which contains all other
-     * triangles), and append them onto the end of a (copy of) the vertex
-     * array. */
-    st = supertriangle(vertices);
-    vertices.push(st[0], st[1], st[2]);
+  /* Next, find the vertices of the supertriangle (which contains all other
+   * triangles), and append them onto the end of a (copy of) the vertex
+   * array. */
+  st = supertriangle(vertices);
+  vertices.push(st[0], st[1], st[2]);
 
-    /* Initialize the open list (containing the supertriangle and nothing
-     * else) and the closed list (which is empty since we havn't processed
-     * any triangles yet). */
-    open = [circumcircle(vertices, n + 0, n + 1, n + 2)];
-    closed = [];
-    edges = [];
+  /* Initialize the open list (containing the supertriangle and nothing
+   * else) and the closed list (which is empty since we havn't processed
+   * any triangles yet). */
+  open = [circumcircle(vertices, n + 0, n + 1, n + 2)];
+  closed = [];
+  edges = [];
 
-    /* Incrementally add each vertex to the mesh. */
-    for (i = indices.length; i--; edges.length = 0) {
-      c = indices[i];
+  /* Incrementally add each vertex to the mesh. */
+  for (i = indices.length; i--; edges.length = 0) {
+    c = indices[i];
 
-      /* For each open triangle, check to see if the current point is
-       * inside it's circumcircle. If it is, remove the triangle and add
-       * it's edges to an edge list. */
-      for (j = open.length; j--; ) {
-        /* If this point is to the right of this triangle's circumcircle,
-         * then this triangle should never get checked again. Remove it
-         * from the open list, add it to the closed list, and skip. */
-        dx = vertices[c][0] - open[j].x;
-        if (dx > 0.0 && dx * dx > open[j].r) {
-          closed.push(open[j]);
-          open.splice(j, 1);
-          continue;
-        }
-
-        /* If we're outside the circumcircle, skip this triangle. */
-        dy = vertices[c][1] - open[j].y;
-        if (dx * dx + dy * dy - open[j].r > EPSILON) continue;
-
-        /* Remove the triangle and add it's edges to the edge list. */
-        edges.push(
-          open[j].i,
-          open[j].j,
-          open[j].j,
-          open[j].k,
-          open[j].k,
-          open[j].i
-        );
+    /* For each open triangle, check to see if the current point is
+     * inside it's circumcircle. If it is, remove the triangle and add
+     * it's edges to an edge list. */
+    for (j = open.length; j--; ) {
+      /* If this point is to the right of this triangle's circumcircle,
+       * then this triangle should never get checked again. Remove it
+       * from the open list, add it to the closed list, and skip. */
+      dx = vertices[c][0] - open[j].x;
+      if (dx > 0.0 && dx * dx > open[j].r) {
+        closed.push(open[j]);
         open.splice(j, 1);
+        continue;
       }
 
-      /* Remove any doubled edges. */
-      dedup(edges);
+      /* If we're outside the circumcircle, skip this triangle. */
+      dy = vertices[c][1] - open[j].y;
+      if (dx * dx + dy * dy - open[j].r > EPSILON) continue;
 
-      /* Add a new triangle for each edge. */
-      for (j = edges.length; j; ) {
-        b = edges[--j];
-        a = edges[--j];
-        open.push(circumcircle(vertices, a, b, c));
-      }
+      /* Remove the triangle and add it's edges to the edge list. */
+      edges.push(
+        open[j].i,
+        open[j].j,
+        open[j].j,
+        open[j].k,
+        open[j].k,
+        open[j].i
+      );
+      open.splice(j, 1);
     }
 
-    /* Copy any remaining open triangles to the closed list, and then
-     * remove any triangles that share a vertex with the supertriangle,
-     * building a list of triplets that represent triangles. */
-    for (i = open.length; i--; ) closed.push(open[i]);
-    open.length = 0;
+    /* Remove any doubled edges. */
+    dedup(edges);
 
-    for (i = closed.length; i--; )
-      if (closed[i].i < n && closed[i].j < n && closed[i].k < n)
-        open.push(closed[i].i, closed[i].j, closed[i].k);
+    /* Add a new triangle for each edge. */
+    for (j = edges.length; j; ) {
+      b = edges[--j];
+      a = edges[--j];
+      open.push(circumcircle(vertices, a, b, c));
+    }
+  }
 
-    /* Yay, we're done! */
-    return open;
-  },
-  contains: function (tri, p) {
-    /* Bounding box test first, for quick rejections. */
-    if (
-      (p[0] < tri[0][0] && p[0] < tri[1][0] && p[0] < tri[2][0]) ||
-      (p[0] > tri[0][0] && p[0] > tri[1][0] && p[0] > tri[2][0]) ||
-      (p[1] < tri[0][1] && p[1] < tri[1][1] && p[1] < tri[2][1]) ||
-      (p[1] > tri[0][1] && p[1] > tri[1][1] && p[1] > tri[2][1])
-    )
-      return null;
+  /* Copy any remaining open triangles to the closed list, and then
+   * remove any triangles that share a vertex with the supertriangle,
+   * building a list of triplets that represent triangles. */
+  for (i = open.length; i--; ) closed.push(open[i]);
+  open.length = 0;
 
-    var a = tri[1][0] - tri[0][0],
-      b = tri[2][0] - tri[0][0],
-      c = tri[1][1] - tri[0][1],
-      d = tri[2][1] - tri[0][1],
-      i = a * d - b * c;
+  for (i = closed.length; i--; )
+    if (closed[i].i < n && closed[i].j < n && closed[i].k < n)
+      open.push(closed[i].i, closed[i].j, closed[i].k);
 
-    /* Degenerate tri. */
-    if (i === 0.0) return null;
-
-    var u = (d * (p[0] - tri[0][0]) - b * (p[1] - tri[0][1])) / i,
-      v = (a * (p[1] - tri[0][1]) - c * (p[0] - tri[0][0])) / i;
-
-    /* If we're outside the tri, fail. */
-    if (u < 0.0 || v < 0.0 || u + v > 1.0) return null;
-
-    return [u, v];
-  },
+  /* Yay, we're done! */
+  return open;
 };
+
+const contains = (tri, p) => {
+  /* Bounding box test first, for quick rejections. */
+  if (
+    (p[0] < tri[0][0] && p[0] < tri[1][0] && p[0] < tri[2][0]) ||
+    (p[0] > tri[0][0] && p[0] > tri[1][0] && p[0] > tri[2][0]) ||
+    (p[1] < tri[0][1] && p[1] < tri[1][1] && p[1] < tri[2][1]) ||
+    (p[1] > tri[0][1] && p[1] > tri[1][1] && p[1] > tri[2][1])
+  )
+    return null;
+
+  var a = tri[1][0] - tri[0][0],
+    b = tri[2][0] - tri[0][0],
+    c = tri[1][1] - tri[0][1],
+    d = tri[2][1] - tri[0][1],
+    i = a * d - b * c;
+
+  /* Degenerate tri. */
+  if (i === 0.0) return null;
+
+  var u = (d * (p[0] - tri[0][0]) - b * (p[1] - tri[0][1])) / i,
+    v = (a * (p[1] - tri[0][1]) - c * (p[0] - tri[0][0])) / i;
+
+  /* If we're outside the tri, fail. */
+  if (u < 0.0 || v < 0.0 || u + v > 1.0) return null;
+
+  return [u, v];
+};
+
+export default triangulate;

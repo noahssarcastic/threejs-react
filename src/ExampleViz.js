@@ -7,6 +7,7 @@ import PointSphere from './PointSphere'
 import Camera from './Camera'
 import Scene from './Scene' 
 import Polyline from './Polyline' 
+import DelaunaySurface from './DelaunaySurface';
 
 extend({ ConvexGeometry });
 
@@ -84,6 +85,7 @@ const ExampleViz = (props) => {
       </mesh>*/}
       <PointSphere ref={mesh} data={topo}/>
       <Scene />
+      <DelaunaySurface vertices={topo}/>
     </Canvas>
   );
 };
