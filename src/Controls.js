@@ -11,7 +11,7 @@ const ALT_KEY = 18;
 const CTRL_KEY = 17;
 const CMD_KEY = 91;
 
-const Controls = ({}) => {
+const Controls = () => {
   const controls = React.useRef();
   const { camera, gl } = useThree();
 
