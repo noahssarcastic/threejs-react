@@ -1,12 +1,12 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState} from 'react';
 import { Canvas, extend } from 'react-three-fiber'
 import { ConvexGeometry } from 'three/examples/jsm/geometries/ConvexGeometry';
-import { Vector3, Box3 } from 'three'
-import { useThree, useFrame, useResource } from 'react-three-fiber';
+import { useResource } from 'react-three-fiber';
 
 import Controls from './Controls';
 import PointSphere from './PointSphere'
 import Camera from './Camera'
+import Scene from './Scene'
 
 extend({ ConvexGeometry });
 
@@ -19,8 +19,35 @@ const ExampleViz = (props) => {
 
   useEffect(() => {
     if (wells.length > 0) {
+
+      let i, xmin, xmax, ymin, ymax, zmin, zmax;
+      for (i = 0; i < wells.length; i++) {
+        if (typeof xmin === 'undefined') {
+          xmin = wells[i].x;
+          xmax = wells[i].x;
+          ymin = wells[i].y;
+          ymax = wells[i].y;
+          zmin = wells[i].topo;
+          zmax = wells[i].topo;
+          continue;
+        } 
+
+        xmin = Math.min(wells[i].x, xmin);
+        xmax = Math.max(wells[i].x, xmax);
+        ymin = Math.min(wells[i].y, ymin);
+        ymax = Math.max(wells[i].y, ymax);
+        zmin = Math.min(wells[i].topo, zmin);
+        zmax = Math.max(wells[i].topo, zmax);
+      }
+
+      // console.log(xmin, xmax, ymin, ymax, zmin, zmax);
+
       const topo_data = wells.map(well => {
-        return {x: well.x, y: well.y, z: well.topo}
+        return {
+          x: ((well.x-xmin)/(xmax-xmin))*20 - 10, 
+          y: ((well.y-ymin)/(ymax-ymin))*20 - 10, 
+          z: ((well.topo-zmin)/(zmax-zmin))*20 - 10
+        };
       });
       setTopo(topo_data);
       // console.log(topo_data)
@@ -31,7 +58,6 @@ const ExampleViz = (props) => {
 
   return (
     <Canvas>
-      <Camera target={mesh} position={[0, 0, 10]}/>
       <Controls />
       <ambientLight color="#ffffff" intensity={0.1} />
       <hemisphereLight
@@ -40,10 +66,12 @@ const ExampleViz = (props) => {
         groundColor="#080820"
         intensity={1.0}
       />
-      <mesh ref={mesh} position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
+      {/*<mesh ref={mesh} position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
         <cylinderBufferGeometry attach="geometry" args={[0.5, 0.5, 0.15, 32]} />
         <meshStandardMaterial attach="material" color="#fff" />
-      </mesh>
+      </mesh>*/}
+      <PointSphere ref={mesh} data={topo}/>
+      <Scene />
     </Canvas>
   );
 };
