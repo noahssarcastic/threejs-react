@@ -45,12 +45,13 @@ const ExampleViz = (props) => {
       "#eee8aa",
       "#6495ed",
       "#ff69b4",
+      "#ff0000",
     ],
   };
 
   const mesh = useResource();
 
-  const [topo, setTopo] = useState([]);
+  const [meshes, setMeshes] = useState([]);
   const [polylines, setPolylines] = useState([]);
 
   useEffect(() => {
@@ -92,29 +93,46 @@ const ExampleViz = (props) => {
       let points = [];
       let j;
       for (j = 0; j < stratigraphyConfig.layers.length; j++) {
-        let layerName= layers[j];
+        let layerName = layers[j];
         points.push([
-          ((well.x - xmin) / xrange) * scale - offset, 
-          ((well.y - ymin) / yrange) * scale - offset, 
-          ((well[layerName] - zmin) / zrange) * scale
+          ((well.x - xmin) / xrange) * scale - offset,
+          ((well.y - ymin) / yrange) * scale - offset,
+          ((well[layerName] - zmin) / zrange) * scale - offset,
         ]);
       }
       polylines.push(points);
-      // const layer_data = wells.map((well) => {
-      //   return {
-      //     x: ((well.x - xmin) / xrange) * scale - offset,
-      //     y: ((well.y - ymin) / yrange) * scale - offset,
-      //     z: ((well.topo - zmin) / zrange) * scale - offset,
-      //   };
-      // });
-      // setTopo(topo_data);
-      // <PointSphere ref={mesh} data={topo} />
-      // <DelaunaySurface vertices={topo} />
     }
     setPolylines(polylines);
-  }, [wells]);
 
-  // if (topo.length <= 0) return null;
+    // Draw layer meshes
+    let meshes = [];
+    for (i = 0; i < stratigraphyConfig.layers.length; i++) {
+      let layerName = layers[i];
+      let points = [];
+      let j;
+      for (j = 0; j < wells.length; j++) {
+        let well = wells[j];
+        let z = well[layerName];
+        let zclip = ((z - zmin) / zrange) * scale - offset;
+        // if (j >= 1) {
+        //   let zprev = well[layers[j - 1]];
+        //   if (Math.abs(z - zprev) < 0.0001) {
+        //     let znew = z - 10;
+        //     zclip = ((znew - zmin) / zrange) * scale - offset;
+        //   }
+        // }
+
+        points.push({
+          x: ((well.x - xmin) / xrange) * scale - offset,
+          y: ((well.y - ymin) / yrange) * scale - offset,
+          z: zclip,
+        });
+      }
+      meshes.push(points);
+      // <PointSphere ref={mesh} data={topo} />
+    }
+    setMeshes(meshes);
+  }, [wells]);
 
   return (
     <Canvas>
@@ -128,7 +146,21 @@ const ExampleViz = (props) => {
       />
       <Scene />
 
-      {polylines.map((points, i) => <Polyline key={`polyline-${i}`} points={points} colors={stratigraphyConfig.colors}/>)}
+      {polylines.map((points, i) => (
+        <Polyline
+          key={`polyline-${i}`}
+          points={points}
+          colors={stratigraphyConfig.colors}
+        />
+      ))}
+
+      {meshes.map((points, i) => (
+        <DelaunaySurface
+          key={`polyline-${i}`}
+          vertices={points}
+          color={stratigraphyConfig.colors[i]}
+        />
+      ))}
     </Canvas>
   );
 };
