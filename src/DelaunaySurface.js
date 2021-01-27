@@ -1,76 +1,89 @@
 import {
   MeshStandardMaterial,
-  Vector3,
-  Geometry,
-  Face3,
-  Mesh,
+  MeshBasicMaterial,
+  BufferGeometry,
+  BufferAttribute,
   DoubleSide,
+  Color,
 } from "three";
-import { useThree } from "react-three-fiber";
 import { useState, useEffect } from "react";
 
 import triangulate from "./utils";
 
 const DelaunaySurface = (props) => {
+  console.log("render");
+
   const { vertices, color } = props;
 
-  const { scene } = useThree();
-
-  const [faces, setFaces] = useState();
-
-  const compute = () => {
-    const projectedPoints = vertices.map(({ x, y, z }) => [x, y]);
-    const triangulation = triangulate(projectedPoints);
-    setFaces(triangulation);
-  };
+  const [material, setMaterial] = useState();
+  const [geometry, setGeometry] = useState();
+  const [hovered, setHovered] = useState(false);
+  const [clicked, setClicked] = useState(false);
 
   useEffect(() => {
-    compute();
-  }, []);
+    console.log("draw");
 
-  const drawSurface = () => {
-    if (typeof faces === "undefined") return;
+    const computeFaces = () => {
+      const projectedPoints = vertices.map(({ x, y, z }) => [x, y]);
+      const triangulation = triangulate(projectedPoints);
+      return triangulation;
+    };
 
-    const material = new MeshStandardMaterial({
-      color: color,
-      opacity: 0.6,
-      transparent: true,
-    });
-    material.side = DoubleSide;
-
-    let i;
-    for (i = 0; i < faces.length; i += 3) {
-      //create a triangular geometry
-      const geometry = new Geometry();
-      let v0 = vertices[faces[i]];
-      geometry.vertices.push(new Vector3(v0.x, v0.y, v0.z));
-
-      let v1 = vertices[faces[i + 1]];
-      geometry.vertices.push(new Vector3(v1.x, v1.y, v1.z));
-
-      let v2 = vertices[faces[i + 2]];
-      geometry.vertices.push(new Vector3(v2.x, v2.y, v2.z));
-
-      //create a new face using vertices 0, 1, 2
-      // const color = new Color(0xffaa00); //optional
-      const face = new Face3(0, 1, 2);
-
-      //add the face to the geometry's faces array
-      geometry.faces.push(face);
-
-      //the face normals and vertex normals can be calculated automatically if not supplied above
+    const drawGeometry = (faces) => {
+      const geometry = new BufferGeometry();
+      let positions = [];
+      let i;
+      for (i = 0; i < faces.length; i += 3) {
+        //create a triangular geometry
+        let v0 = vertices[faces[i]];
+        positions.push(v0.x, v0.y, v0.z);
+        let v1 = vertices[faces[i + 1]];
+        positions.push(v1.x, v1.y, v1.z);
+        let v2 = vertices[faces[i + 2]];
+        positions.push(v2.x, v2.y, v2.z);
+      }
       geometry.computeFaceNormals();
       geometry.computeVertexNormals();
+      geometry.setAttribute(
+        "position",
+        new BufferAttribute(Float32Array.from(positions), 3)
+      );
+      setGeometry(geometry);
+    };
 
-      scene.add(new Mesh(geometry, material));
-    }
-  };
+    drawGeometry(computeFaces());
+  }, [vertices]);
 
   useEffect(() => {
-    drawSurface();
-  }, [faces]);
+    console.log("material");
 
-  return null;
+    const material = new MeshBasicMaterial({
+      color: color,
+      opacity: 0.6,
+      transparent: !hovered,
+    });
+    material.side = DoubleSide;
+    setMaterial(material);
+  }, [color, hovered]);
+
+  return (
+    <mesh
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        setHovered(false);
+      }}
+      geometry={geometry}
+      material={material}
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log(e);
+      }}
+    />
+  );
 };
 
 export default DelaunaySurface;

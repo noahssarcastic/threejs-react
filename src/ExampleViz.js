@@ -59,6 +59,7 @@ const ExampleViz = (props) => {
 
     let i, xmin, xmax, ymin, ymax, zmin, zmax;
     let layers = stratigraphyConfig.layers;
+
     for (i = 0; i < wells.length; i++) {
       let well = wells[i];
 
@@ -114,13 +115,6 @@ const ExampleViz = (props) => {
         let well = wells[j];
         let z = well[layerName];
         let zclip = ((z - zmin) / zrange) * scale - offset;
-        // if (j >= 1) {
-        //   let zprev = well[layers[j - 1]];
-        //   if (Math.abs(z - zprev) < 0.0001) {
-        //     let znew = z - 10;
-        //     zclip = ((znew - zmin) / zrange) * scale - offset;
-        //   }
-        // }
 
         points.push({
           x: ((well.x - xmin) / xrange) * scale - offset,
