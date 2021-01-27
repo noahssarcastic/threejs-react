@@ -54,7 +54,7 @@ const DelaunaySurface = (props) => {
 				new Vector3(v2.x, v2.y, v2.z)
 			);
 
-			console.log(v0, v1, v2);
+			// console.log(v0, v1, v2);
 
 			//create a new face using vertices 0, 1, 2
 			// const color = new Color(0xffaa00); //optional

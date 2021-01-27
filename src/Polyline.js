@@ -19,9 +19,6 @@ const Polyline = (props) => {
 			let color = colors[i];
 			let material = new LineBasicMaterial({
 				color: color,
-				linewidth: 10,
-				linecap: "round",
-				linejoin: "round",
 			});
 			materials.push(material);
 		}

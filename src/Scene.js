@@ -1,5 +1,5 @@
 import { useThree } from "react-three-fiber";
-import {LineBasicMaterial, Vector3, BufferGeometry, Line} from 'three';
+import {LineBasicMaterial, Vector3, BufferGeometry, Line, Color} from 'three';
 import {useEffect} from 'react';
 
 const Scene = () => {
@@ -65,6 +65,7 @@ const Scene = () => {
 	useEffect(() => {
 		drawGrid();
 		drawAxes();
+		scene.background = new Color( 0x555555 )
 	}, []);
 
 	return null;
